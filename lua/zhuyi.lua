@@ -66,9 +66,18 @@ local function change_dir(path)
   api.nvim_command('cd '..path)
 end
 
+local function new_buffer()
+  return api.nvim_command('enew')
+end
+
+local function open_index_md()
+  api.nvim_command('edit index.md')
+end
+
 local function index()
   local zp = get_config()
   change_dir(zp)
+  open_index_md()
 end
 
 local function new_note()
