@@ -94,4 +94,5 @@ end
 
 return {
   new_note = new_note
+  index = index
 }
