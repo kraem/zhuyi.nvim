@@ -93,6 +93,6 @@ local function new_note()
 end
 
 return {
-  new_note = new_note
+  new_note = new_note,
   index = index
 }
