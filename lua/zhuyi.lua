@@ -62,7 +62,16 @@ local function write_file(path, time_fm)
   write_fm(path, time_fm)
 end
 
-function new_note()
+local function change_dir(path)
+  api.nvim_command('cd '..path)
+end
+
+local function index()
+  local zp = get_config()
+  change_dir(zp)
+end
+
+local function new_note()
   local zp = get_config()
   local time_file, time_fm = get_time()
   local new_note_name = zp .. time_file
