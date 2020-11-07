@@ -2,9 +2,13 @@ local api = vim.api
 local luv = vim.loop
 local open_mode = luv.constants.O_CREAT + luv.constants.O_WRONLY + luv.constants.O_TRUNC
 
+local rest_api = require('zhuyi-rest')
+
 local alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
 local ext_md = '.md'
+local ext = ext_md
+local index = 'index'..ext
 local delim_fm = '---'
 
 local function get_time()
@@ -16,9 +20,16 @@ local function get_time()
 end
 
 local function get_config()
+  local trailing_slash = '/'
+  local zp = os.getenv("ZHUYI_PATH")
+  local l = string.len(zp)
+  local c = string.sub(zp, l, l)
+  if c ~= trailing_slash then
+    zp = zp .. trailing_slash
+  end
   -- TODO
-  -- assert and exit sanely
-  return os.getenv("ZHUYI_PATH")
+  -- assert we've got perms
+  return zp
 end
 
 local function file_exists(path)
@@ -70,30 +81,60 @@ local function new_buffer()
   return api.nvim_command('enew')
 end
 
-local function open_index_md()
-  api.nvim_command('edit index.md')
+local function open_file(fn)
+  api.nvim_command('edit '..fn)
 end
 
 local function index()
   local zp = get_config()
   change_dir(zp)
-  open_index_md()
+  open_file('index.md')
+  -- rest_api.backend_status()
 end
+
+local function backend_status()
+  rest_api.backend_status()
+end
+
+function callback(ret, nodes)
+  for k,v in pairs(ret.payload.unlinked_zettels) do
+    table.insert(nodes, v)
+  end
+end
+
+local function unlinked_nodes()
+  local zp = get_config()
+  local nodes = {}
+  rest_api.unlinked_nodes(callback, nodes)
+  -- nodes is an array with objects
+  for k,v in pairs(nodes) do
+    -- loop over keys in the objects
+    --for k,v in pairs(v) do
+    --  print(k,v)
+    --end
+    fn = v.file
+    fp = zp..fn
+    open_file(fp)
+  end
+end
+
 
 local function new_note()
   local zp = get_config()
   local time_file, time_fm = get_time()
   local new_note_name = zp .. time_file
-  local new_note_path = zp .. time_file .. ext_md
-  if not file_exists(new_note_path)then
+  local new_note_path = zp .. time_file .. ext
+  if not file_exists(new_note_path) then
     write_file(new_note_path, time_fm)
+    open_file(new_note_path)
     return true
   else
     for i=1, string.len(alphabet) do
       local c = string.sub(alphabet, i, i)
-      local new_note_path = zp .. time_file .. c .. ext_md
+      local new_note_path = zp .. time_file .. c .. ext
       if not file_exists(new_note_path) then
         write_file(new_note_path, time_fm)
+        open_file(new_note_path)
         return true
       end
     end
@@ -103,5 +144,6 @@ end
 
 return {
   new_note = new_note,
-  index = index
+  index = index,
+  unlinked_nodes = unlinked_nodes
 }
