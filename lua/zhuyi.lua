@@ -33,13 +33,6 @@ local function get_zhuyi_path()
   return zp
 end
 
-local function file_exists(path)
-  -- perl -e 'printf "%d\n", (stat "201103-0034a.md")[2] & 07777'
-  -- https://stackoverflow.com/questions/15055634/understanding-and-decoding-the-file-mode-value-from-stat-function-output
-  local fd = luv.fs_open(path, "r", 438)
-  if fd == nil then return false else return true end
-end
-
 local function touch_file(path)
   -- TODO check for errors
   local body = ''
@@ -68,10 +61,36 @@ local function write_fm(path, time_fm)
   assert(luv.fs_close(fd))
 end
 
+local function unlinked_payload_to_md(nodes)
+  local md = {}
+  if #nodes < 1 then
+    return md
+  end
+  local newline = ''
+  local heading = '# Unlinked'
+  table.insert(md, newline)
+  table.insert(md, heading)
+  table.insert(md, newline)
+  for _,v in pairs(nodes) do
+    local node_md =
+          '- ' .. '['..v.title..']'
+               .. '('..v.file..')'
+    table.insert(md, node_md)
+  end
+  return md
+end
+
 local function write_file(path, time_fm)
   -- TODO return success
   touch_file(path)
   write_fm(path, time_fm)
+end
+
+local function file_exists(path)
+  -- perl -e 'printf "%d\n", (stat "201103-0034a.md")[2] & 07777'
+  -- https://stackoverflow.com/questions/15055634/understanding-and-decoding-the-file-mode-value-from-stat-function-output
+  local fd = luv.fs_open(path, "r", 438)
+  if fd == nil then return false else return true end
 end
 
 local function change_dir(path)
@@ -100,25 +119,6 @@ local function index()
   local zp = get_zhuyi_path()
   change_dir(zp)
   open_file('index.md')
-end
-
-local function unlinked_payload_to_md(nodes)
-  local md = {}
-  if #nodes < 1 then
-    return md
-  end
-  local newline = ''
-  local heading = '# Unlinked'
-  table.insert(md, newline)
-  table.insert(md, heading)
-  table.insert(md, newline)
-  for _,v in pairs(nodes) do
-    local node_md =
-          '- ' .. '['..v.title..']'
-               .. '('..v.file..')'
-    table.insert(md, node_md)
-  end
-  return md
 end
 
 local function unlinked_nodes()
