@@ -18,6 +18,8 @@ local spec = specs.define{
 local client = daedalus.make_client(spec)
 
 local function unlinked_nodes_handler(ret, nodes)
+  -- TODO
+  -- error handling
   for k,v in pairs(ret.payload.unlinked_zettels) do
     table.insert(nodes, v)
   end
