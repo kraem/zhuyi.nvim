@@ -2,7 +2,7 @@ local api = vim.api
 local luv = vim.loop
 local open_mode = luv.constants.O_CREAT + luv.constants.O_WRONLY + luv.constants.O_TRUNC
 
-local rest_api = require('zhuyi-rest')
+local rest_api = require('rest')
 
 local alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
