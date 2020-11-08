@@ -1,17 +1,17 @@
-local daedalus = require("daedalus")
-local specs = require("daedalus.specs")
-local helpers = require("daedalus.helpers")
+local daedalus = require('daedalus')
+local specs = require('daedalus.specs')
+local helpers = require('daedalus.helpers')
 
 local spec = specs.define{
   ['*'] = {
-    url = "http://127.0.0.1:8000",
-    method = "get",
+    url = 'http://' .. vim.g.zhuyi_backend,
+    method = 'get',
   },
   status = {
-    path = "/status",
+    path = '/status',
   },
   unlinked_nodes = {
-    path = "/isolated"
+    path = '/isolated'
   }
 }
 
