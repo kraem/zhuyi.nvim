@@ -98,12 +98,6 @@ local function backend_status()
   rest_api.backend_status()
 end
 
-local function callback(ret, nodes)
-  for k,v in pairs(ret.payload.unlinked_zettels) do
-    table.insert(nodes, v)
-  end
-end
-
 local function unlinked_payload_to_md(nodes)
   local md = {}
   if #nodes < 1 then
@@ -130,7 +124,7 @@ end
 
 local function unlinked_nodes()
   local nodes = {}
-  rest_api.unlinked_nodes(callback, nodes)
+  rest_api.unlinked_nodes(nodes)
   local md = unlinked_payload_to_md(nodes)
   append_to_current_buffer(md)
 end

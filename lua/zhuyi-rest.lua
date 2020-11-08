@@ -17,7 +17,13 @@ local spec = specs.define{
 
 local client = daedalus.make_client(spec)
 
-local function unlinked_nodes(callback, nodes)
+local function unlinked_nodes_handler(ret, nodes)
+  for k,v in pairs(ret.payload.unlinked_zettels) do
+    table.insert(nodes, v)
+  end
+end
+
+local function unlinked_nodes(nodes)
   client.unlinked_nodes{
     before = function(cmd)
       -- if you need to extend the curl command or debug it before calling,
@@ -25,7 +31,7 @@ local function unlinked_nodes(callback, nodes)
       return cmd
     end,
     handler = function(ret)
-      callback(ret, nodes)
+      unlinked_nodes_handler(ret, nodes)
     end,
     decode = function(str)
       -- if you need to parse values other than json, override this function
