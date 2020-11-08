@@ -74,6 +74,7 @@ local function write_file(path, time_fm)
 end
 
 local function change_dir(path)
+  -- nvim_set_current_dir({dir})
   api.nvim_command('cd '..path)
 end
 
@@ -96,26 +97,41 @@ local function backend_status()
   rest_api.backend_status()
 end
 
-function callback(ret, nodes)
+local function callback(ret, nodes)
   for k,v in pairs(ret.payload.unlinked_zettels) do
     table.insert(nodes, v)
   end
 end
 
+local function unlinked_payload_to_md(nodes)
+  local md = {}
+  if #nodes < 1 then
+    return md
+  end
+  local newline = ''
+  local heading = '# Unlinked'
+  table.insert(md, newline)
+  table.insert(md, heading)
+  table.insert(md, newline)
+  for _,v in pairs(nodes) do
+    local node_md =
+          '- ' .. '['..v.title..']'
+               .. '('..v.file..')'
+    table.insert(md, node_md)
+  end
+  return md
+end
+
+local function append_to_current_buffer(content)
+  local cur_buf = vim.api.nvim_get_current_buf()
+  vim.api.nvim_buf_set_lines(cur_buf, -1, -1, false, content)
+end
+
 local function unlinked_nodes()
-  local zp = get_config()
   local nodes = {}
   rest_api.unlinked_nodes(callback, nodes)
-  -- nodes is an array with objects
-  for k,v in pairs(nodes) do
-    -- loop over keys in the objects
-    --for k,v in pairs(v) do
-    --  print(k,v)
-    --end
-    fn = v.file
-    fp = zp..fn
-    open_file(fp)
-  end
+  local md = unlinked_payload_to_md(nodes)
+  append_to_current_buffer(md)
 end
 
 
