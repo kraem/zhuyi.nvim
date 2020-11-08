@@ -19,9 +19,10 @@ local function get_time()
   return time_file, time_fm
 end
 
-local function get_config()
+local function get_zhuyi_path()
   local trailing_slash = '/'
-  local zp = os.getenv("ZHUYI_PATH")
+  -- local zp = os.getenv("ZHUYI_PATH")
+  local zp = vim.g.zhuyi_path
   local l = string.len(zp)
   local c = string.sub(zp, l, l)
   if c ~= trailing_slash then
@@ -87,7 +88,7 @@ local function open_file(fn)
 end
 
 local function index()
-  local zp = get_config()
+  local zp = get_zhuyi_path()
   change_dir(zp)
   open_file('index.md')
   -- rest_api.backend_status()
@@ -136,7 +137,7 @@ end
 
 
 local function new_note()
-  local zp = get_config()
+  local zp = get_zhuyi_path()
   local time_file, time_fm = get_time()
   local new_note_name = zp .. time_file
   local new_note_path = zp .. time_file .. ext
