@@ -87,15 +87,19 @@ local function open_file(fn)
   api.nvim_command('edit '..fn)
 end
 
-local function index()
-  local zp = get_zhuyi_path()
-  change_dir(zp)
-  open_file('index.md')
-  -- rest_api.backend_status()
+local function append_to_current_buffer(content)
+  local cur_buf = vim.api.nvim_get_current_buf()
+  vim.api.nvim_buf_set_lines(cur_buf, -1, -1, false, content)
 end
 
 local function backend_status()
   rest_api.backend_status()
+end
+
+local function index()
+  local zp = get_zhuyi_path()
+  change_dir(zp)
+  open_file('index.md')
 end
 
 local function unlinked_payload_to_md(nodes)
@@ -115,11 +119,6 @@ local function unlinked_payload_to_md(nodes)
     table.insert(md, node_md)
   end
   return md
-end
-
-local function append_to_current_buffer(content)
-  local cur_buf = vim.api.nvim_get_current_buf()
-  vim.api.nvim_buf_set_lines(cur_buf, -1, -1, false, content)
 end
 
 local function unlinked_nodes()
