@@ -12,7 +12,8 @@ local index = 'index'..ext
 local delim_fm = '---'
 
 local function get_time()
-  -- TODO these can be 2 different times
+  -- TODO
+  -- these can be 2 different times
   -- not in the mood for string rebuilding magic..
   local time_file = os.date("%y%m%d-%H%M")
   local time_fm = os.date("%Y-%m-%d %H:%M")
@@ -21,7 +22,6 @@ end
 
 local function get_zhuyi_path()
   local trailing_slash = '/'
-  -- local zp = os.getenv("ZHUYI_PATH")
   local zp = vim.g.zhuyi_path
   local l = string.len(zp)
   local c = string.sub(zp, l, l)
@@ -34,8 +34,11 @@ local function get_zhuyi_path()
 end
 
 local function touch_file(path)
-  -- TODO check for errors
+  -- TODO
+  -- check for errors
   local body = ''
+  -- TODO
+  -- fix 438 mode
   local fd = luv.fs_open(path, "w+", 438)
   local resp = luv.fs_write(fd, body, 0, nil)
   assert(luv.fs_close(fd))
@@ -56,6 +59,8 @@ local function write_fm(path, time_fm)
     newline..
     delim_fm..
     newline
+  -- TODO
+  -- fix 438 mode
   local fd = luv.fs_open(path, "w+", 438)
   local resp = luv.fs_write(fd, body, 0, nil)
   assert(luv.fs_close(fd))
@@ -81,21 +86,23 @@ local function unlinked_payload_to_md(nodes)
 end
 
 local function write_file(path, time_fm)
-  -- TODO return success
+  -- TODO
+  -- return success/err
   touch_file(path)
   write_fm(path, time_fm)
 end
 
 local function file_exists(path)
-  -- perl -e 'printf "%d\n", (stat "201103-0034a.md")[2] & 07777'
-  -- https://stackoverflow.com/questions/15055634/understanding-and-decoding-the-file-mode-value-from-stat-function-output
+  -- TODO
+  -- fix 438 mode
   local fd = luv.fs_open(path, "r", 438)
-  if fd == nil then return false else return true end
+  if fd == nil then return false end
+  return true
 end
 
 local function change_dir(path)
-  -- nvim_set_current_dir({dir})
-  api.nvim_command('cd '..path)
+  api.nvim_set_current_dir(path)
+  --api.nvim_command('cd '..path)
 end
 
 local function new_buffer()
@@ -133,21 +140,34 @@ local function new_note()
   local time_file, time_fm = get_time()
   local new_note_name = zp .. time_file
   local new_note_path = zp .. time_file .. ext
-  if not file_exists(new_note_path) then
+
+  local function write_and_open(path, time_fm)
     write_file(new_note_path, time_fm)
     open_file(new_note_path)
-    return true
-  else
+  end
+
+  local function available_fn(new_note_path, time_file)
     for i=1, string.len(alphabet) do
       local c = string.sub(alphabet, i, i)
       local new_note_path = zp .. time_file .. c .. ext
       if not file_exists(new_note_path) then
-        write_file(new_note_path, time_fm)
-        open_file(new_note_path)
-        return true
+        return true, new_note_path
       end
     end
+    return false
   end
+
+  if not file_exists(new_note_path) then
+    write_and_open(new_note_path, time_fm)
+    return true
+  end
+
+  ok, new_note_path = available_fn(new_note_path, time_file)
+  if ok then
+    write_and_open(new_note_path, time_fm)
+    return true
+  end
+
   return false
 end
 
@@ -158,56 +178,82 @@ end
 function handle_link()
 
   local function handle_non_md_link()
-    --https://www.reddit.com/r/neovim/comments/i72eo7/open_link_with_gx_asynchronously/g0zd4gp/?utm_source=reddit&utm_medium=web2x&context=3
-    --local cw = api.nvim_eval("expand('<cWORD>')")
-    local url = vim.fn.expand('<cWORD>')
-    return url
+    local uri = vim.fn.expand('<cWORD>')
+    return uri
   end
 
-  local function handle_md_link(url)
-    local l = string.len(url)
-    url = string.sub(url, 2, l-1)
-    return url
+  local function handle_md_link(uri)
+    local l = string.len(uri)
+    uri = string.sub(uri, 2, l-1)
+    return uri
   end
 
-  local function open_non_local_link(url)
-  -- this can be done more nicely async (libuv)
-  -- that way we can ignore error msgs et. al.
+  local function open_non_local_link(uri)
+    -- TODO
+    -- this can be done more nicely async (libuv)
+    -- that way we can ignore error msgs et. al.
     local xdg_open = 'xdg-open '
     local ig_output = ' 2> /dev/null'
-    os.execute(xdg_open..url..ig_output)
+    os.execute(xdg_open..uri..ig_output)
   end
 
-  local function has_md_extension(url)
-    local l = string.len(url)
-    local ext = string.sub(url, l-2, l)
+  local function has_md_ext(uri)
+    local l = string.len(uri)
+    local ext = string.sub(uri, l-2, l)
     if ext ~= ext_md then return false end
     return true
   end
 
-  local function cur_line_md()
-    local title, url = api.nvim_get_current_line():match("(%b[])(%b())")
-    if title == nil and url == nil then
-      return false, url
+  local function is_http_s(uri)
+    -- TODO
+    -- this won't work as it's not only https uri:s we want to open in other
+    -- apps than neovim.
+    local http_s = 'https?'
+    local ext = string.sub(uri, 1, 4)
+    local match = string.match(ext, http_s)
+    if match ~=nil then
+      return false
     end
-    return true, url
+    return true
   end
 
-  is_md, url = cur_line_md()
+  local function uri_is_local(uri)
+    -- TODO
+    -- can use get_zhuyi_path
+    -- TODO
+    -- this won't work as we sometimes want to open local files in other apps
+    -- than neovim without more logic.
+    local zhuyi_path = vim.fn.expand('%:p:h')
+    local local_path = zhuyi_path..'/'..uri
+    if not file_exists(local_path) then
+      return false
+    end
+    return true
+  end
+
+  local function cur_line_md()
+    local title, uri = api.nvim_get_current_line():match("(%b[])(%b())")
+    if title == nil and uri == nil then
+      return false, uri
+    end
+    return true, uri
+  end
+
+  is_md, uri = cur_line_md()
 
   if not is_md then
-    url = handle_non_md_link()
-    open_non_local_link(url)
+    uri = handle_non_md_link()
+    open_non_local_link(uri)
     return
   end
 
-  url = handle_md_link(url)
-  if not has_md_extension(url) then
-    open_non_local_link(url)
+  uri = handle_md_link(uri)
+  if not has_md_ext(uri) then
+    open_non_local_link(uri)
     return
   end
 
-  open_file(url)
+  open_file(uri)
 end
 
 local function del_cur_zhuyi()
