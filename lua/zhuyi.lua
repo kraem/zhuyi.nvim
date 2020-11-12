@@ -128,7 +128,6 @@ local function unlinked_nodes()
   append_to_current_buffer(md)
 end
 
-
 local function new_note()
   local zp = get_zhuyi_path()
   local time_file, time_fm = get_time()
@@ -152,8 +151,90 @@ local function new_note()
   return false
 end
 
+function follow_link()
+  handle_link()
+end
+
+function handle_link()
+
+  local function handle_non_md_link()
+    --https://www.reddit.com/r/neovim/comments/i72eo7/open_link_with_gx_asynchronously/g0zd4gp/?utm_source=reddit&utm_medium=web2x&context=3
+    --local cw = api.nvim_eval("expand('<cWORD>')")
+    local url = vim.fn.expand('<cWORD>')
+    return url
+  end
+
+  local function handle_md_link(url)
+    local l = string.len(url)
+    url = string.sub(url, 2, l-1)
+    return url
+  end
+
+  local function open_non_local_link(url)
+  -- this can be done more nicely async (libuv)
+  -- that way we can ignore error msgs et. al.
+    local xdg_open = 'xdg-open '
+    local ig_output = ' 2> /dev/null'
+    os.execute(xdg_open..url..ig_output)
+  end
+
+  local function has_md_extension(url)
+    local l = string.len(url)
+    local ext = string.sub(url, l-2, l)
+    if ext ~= ext_md then return false end
+    return true
+  end
+
+  local function cur_line_md()
+    local title, url = api.nvim_get_current_line():match("(%b[])(%b())")
+    if title == nil and url == nil then
+      return false, url
+    end
+    return true, url
+  end
+
+  is_md, url = cur_line_md()
+
+  if not is_md then
+    url = handle_non_md_link()
+    open_non_local_link(url)
+    return
+  end
+
+  url = handle_md_link(url)
+  if not has_md_extension(url) then
+    open_non_local_link(url)
+    return
+  end
+
+  open_file(url)
+end
+
+local function del_cur_zhuyi()
+  local y = 'y'
+  -- TODO
+  -- better way to get current file?
+  -- any nvim api function?
+  local cur_file_path = vim.fn.expand('%:p')
+  local query = 'delete '..cur_file_path..'? (y/n) '
+  if vim.fn.input(query) ~= y then
+    return
+  end
+  local ok, err = luv.fs_unlink(cur_file_path)
+  if not ok then
+    -- TODO
+    -- err handling?
+    print(err)
+    return
+  end
+  opts = { force = true }
+  api.nvim_buf_delete(0, opts)
+end
+
 return {
   new_note = new_note,
   index = index,
-  unlinked_nodes = unlinked_nodes
+  unlinked_nodes = unlinked_nodes,
+  del_cur_zhuyi = del_cur_zhuyi,
+  follow_link = follow_link
 }

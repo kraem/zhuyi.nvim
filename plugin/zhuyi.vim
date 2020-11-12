@@ -10,6 +10,16 @@ function zhuyi#unlinked_nodes()
   call luaeval('require("zhuyi").unlinked_nodes()')
 endfunction
 
+function zhuyi#del_note()
+  call luaeval('require("zhuyi").del_cur_zhuyi()')
+endfunction
+
+function zhuyi#follow_link()
+  call luaeval('require("zhuyi").follow_link()')
+endfunction
+
 command ZhuyiNewNote    :call zhuyi#new_note()
 command ZhuyiIndex      :call zhuyi#index()
 command ZhuyiUnlinked   :call zhuyi#unlinked_nodes()
+command ZhuyiDel        :call zhuyi#del_note()
+command ZhuyiFollowLink :call zhuyi#follow_link()
