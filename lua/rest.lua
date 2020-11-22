@@ -11,7 +11,7 @@ local spec = specs.define{
     path = '/status',
   },
   unlinked_nodes = {
-    path = '/isolated'
+    path = '/unlinked'
   }
 }
 
