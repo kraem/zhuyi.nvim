@@ -4,7 +4,7 @@ local luv = vim.loop
 local open_mode = luv.constants.O_CREAT + luv.constants.O_WRONLY +
                       luv.constants.O_TRUNC
 
-local rest_api = require('rest')
+--local rest_api = require('rest')
 
 local alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
@@ -296,8 +296,14 @@ local function walk_graph(node, graph)
                                 goto continue
                         end
                         local child_node = graph[link_file]
-                        if not child_node["walked"] then
-                                walk_graph(child_node, graph)
+                        -- TODO
+                        -- temp check against http(s) prefix with .md suffix
+                        if child_node ~= nil then
+                          if not child_node["walked"] then
+                                  walk_graph(child_node, graph)
+                          end
+                        else
+                          print(link_file)
                         end
                 end
                 ::continue::
